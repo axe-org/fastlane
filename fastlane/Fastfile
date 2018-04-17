@@ -98,9 +98,7 @@ lane :axe_pod_install do |options|
   end
   cocoapods(error_callback: ->(result) {
     sh("rm ../Podfile")
-    # sh("mv ../Podfile.backup ../Podfile")
   })
-  # sh("mv ../Podfile.backup ../Podfile")
   sh("rm ../Podfile")
 end
 
@@ -114,9 +112,6 @@ def axe_handler_ground_headers
   headerDirs = []
   Dir.chdir("Pods/Headers/Public/") do
     sh("rm -rf .axeHeaders && mkdir -p .axeHeaders/dir && mkdir .axeHeaders/src")
-
-    # sh("echo `cp Axe/*.h tt/`")
-    # sh("echo `cp glog/*.h tt/`")
     Dir.foreach("./") do |pod|
       # 忽略以 . 开头的隐藏文件
       if File.directory?(pod) && pod[0] != '.'
