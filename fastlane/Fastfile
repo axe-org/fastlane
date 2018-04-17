@@ -35,15 +35,15 @@ $axeConfig = eval(content)
 # TODO 检测输入类型是否准确
 
 
-desc "`axe_pod` : 安装依赖。 对于module和app类型，拥有业务组件依赖，所以必须通过该命令安装依赖。"
+desc "安装依赖。 对于module和app类型，拥有业务组件依赖，所以必须通过该命令安装依赖。"
 desc "**使用axe安装依赖，必须使用Podfile.rb文件，而不是Podfile文件。**"
 desc "拥有两个参数："
 desc "* `production` : 标记使用prd版本还是beta版本的依赖，默认为 false"
 desc "* `source` : 标记是否使用源码引入，默认为 false。"
 desc ""
 desc "手动安装时，可以快速执行命令： "
-desc "```\nfastlane axe_pod production:true source:true\n```"
-lane :axe_pod do |options|
+desc "```\nfastlane axe_pod_install production:true source:true\n```"
+lane :axe_pod_install do |options|
   unless File.exist?("../axe/Podfile.rb")
     UI.error "请在.axe目录创建 Podfile.rb "
     exit(1)
@@ -334,7 +334,7 @@ desc ""
 lane :axe_module_build do |options|
   # 先检测 依赖是否安装
   unless File.exist?("../Podfile.lock")
-    UI.error "请先执行 axe_pod 命令以安装依赖！！！ "
+    UI.error "请先执行 axe_pod_install 命令以安装依赖！！！ "
     exit(1)
   end
   production = options[:production] ? true : false

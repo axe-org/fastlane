@@ -8,7 +8,7 @@ Axe auto tools using fastlane
 
 # 指令列表 
 
-### `axe_pod`
+### `axe_pod_install`
 
 安装依赖。 对于`module`和`app`类型，拥有业务组件依赖，所以必须通过该命令安装依赖。 其依赖配置在`Podfile.rb` 文件中，本地不放 `Podfile`文件，`Podfile`文件在`pod install`时自动生成。 所以模块和app的依赖都写在`Podfile.rb` 文件中。
 
@@ -21,7 +21,7 @@ Axe auto tools using fastlane
 
 手动安装时，可以快速执行命令： 
 
-	fastlane axe_pod production:true source:true
+	fastlane axe_pod_install production:true source:true
 
 ### `axe_module_build`
 
@@ -56,3 +56,10 @@ Axe auto tools using fastlane
 参数：
 
 
+### `axe_init_module`
+
+脚手架支持， 以创建一个标准的模块仓库。
+
+> 暂未完成
+
+参数：
