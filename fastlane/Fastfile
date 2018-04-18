@@ -31,7 +31,10 @@ unless File.exist?(config_file)
 end
 content = File.read config_file
 $axeConfig = eval(content)
-
+if $axeConfig.type == "app" && File.exist?('../axe/dependency.json')
+  # 对于app类型，从本地读取依赖信息。
+  $axeConfig.dependency = JSON.parse(File.read('../axe/dependency.json'))
+end
 # TODO 检测输入类型是否准确
 
 
@@ -64,15 +67,15 @@ lane :axe_pod_install do |options|
   $axeConfig.dependency.each do |key,value|
     dependency = options[:source] ? "#{key}/source" : "#{key}/release"
     if $axeConfig.type.eql?('app')
-      devDependency = "#{devDependency}\n  pod #{dependency} , '>= #{value}-beta.0', '< #{value}'"
-      prdDependency = "#{prdDependency}\n  pod #{dependency} , '#{value}'"
+      devDependency = "#{devDependency}\n  pod '#{dependency}' , '>= #{value}-beta.0', '< #{value}'"
+      prdDependency = "#{prdDependency}\n  pod '#{dependency}' , '#{value}'"
     else
       # 模块只依赖 API
       versionSplitted = value.split(".")
       majorVersion = versionSplitted[0].to_i
       minorVersion = versionSplitted[1].to_i
-      devDependency = "#{devDependency}\n  pod #{key} , '>= #{value}-beta.0', '< #{majorVersion + 1}.0.0'"
-      prdDependency = "#{prdDependency}\n  pod #{key} , '~> #{majorVersion}.#{minorVersion}'"
+      devDependency = "#{devDependency}\n  pod '#{key}' , '>= #{value}-beta.0', '< #{majorVersion + 1}.0.0'"
+      prdDependency = "#{prdDependency}\n  pod '#{key}' , '~> #{majorVersion}.#{minorVersion}'"
     end
   end
   devPodfile = devPodfile.sub('AXE_PODFILE', devDependency)
@@ -91,11 +94,12 @@ lane :axe_pod_install do |options|
     # 这里建议删掉 workspace文件. 
     sh("rm -rf #{$axeConfig.workspace}")
     if options[:production]
-      sh("mv axe/Podfile.prd.rb Podfile")
+      sh("cp -f axe/Podfile.prd.rb Podfile")
     else
-      sh("mv axe/Podfile.dev.rb Podfile")
+      sh("cp -f axe/Podfile.dev.rb Podfile")
     end
   end
+  sh("pod repo update #{$axeConfig.podRepo}")
   cocoapods(error_callback: ->(result) {
     sh("rm ../Podfile")
   })
@@ -266,6 +270,9 @@ def axe_dependency_analyse
   podInfo = YAML.load_file("../Podfile.lock")
   dependencies = Hash.new
   dependencyVersions = Hash.new
+  if podInfo['PODS'] == nil
+    return
+  end
   podInfo['PODS'].each do |value|
     if  value.class  == Hash
       # 这里只分析依赖的依赖情况。
@@ -344,14 +351,55 @@ lane :axe_module_build do |options|
 end
 
 desc "`axe_import_module` : 负责APP中接入 组件模块。"
-desc "使用 Podfile.rb文件！！！"
+desc "使用 Podfile.rb文件！！！会检测是否有实际变更。 "
 desc "参数："
-desc ""
+desc "import : 新引入模块，json字符串，如 {\"a\":\"1.1.1\"} ， key为模块名，value为版本号"
+desc "remove : 删除的模块，json字符串，如 [\"a\",\"b\"] "
 lane :axe_import_module do |options|
-  # 检测更新
+  changeCount = 0 # 统计变更内容数量，如果没有变更，则报错。
+  importModules = options[:import] ? JSON.parse(options[:import]) : Hash.new
+  removeModules = options[:remove] ? JSON.parse(options[:remove]) : []
+  message = "axe 自动接入模块 ："
+  oldDependency = $axeConfig.dependency
+  importModules.each do |moduleName, version|
+    if oldDependency.has_key?(moduleName)
+      oldVersion = oldDependency[moduleName]
+      unless oldVersion.eql?(version)
+        message += "\n #{moduleName} : #{oldVersion} => #{version} "
+        changeCount += 1
+      end
+    else
+      message += "\n #{moduleName} : 新模块，版本号为 #{version} "
+      changeCount += 1
+    end
+    oldDependency[moduleName] = version
+  end
+  newDependency = oldDependency.clone
+  removeModules.each do |moduleName|
+    if newDependency.has_key?(moduleName)
+      newDependency.delete(moduleName)
+      changeCount += 1
+    else
+      UI.message "无法删除模块#{moduleName}， 当前并没有引入该模块！"
+    end
+  end
+  if changeCount == 0
+    UI.error "并没有新模块引入或者版本升级， 请检查输入！！！ "
+    exit(1)
+  end
+  $axeConfig.dependency = newDependency
+  # 安装依赖
+  axe_pod_install
   # 整合后，分析APP的依赖情况。
-  # axe_dependency_analyse
-  puts "TODO"
+  axe_dependency_analyse
+  # 分析完成后，保存本地dependency文件
+  dependencyFile = File.open('../axe/dependency.json',"w+")
+  dependencyFile.puts(JSON.generate(newDependency))
+  dependencyFile.close
+  # 最后，提交git
+  git_add(path: "axe")
+  git_commit(path: "axe", message: message)
+  push_to_git_remote
 end
 
 desc "`axe_init_module` : 脚手架模式，以快速搭建一个标准的module"

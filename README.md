@@ -51,10 +51,10 @@ Axe auto tools using fastlane
 
 接入`axe`的APP，通过该指令来管理 其他组件的接入。
 
-> 暂未完成
-
 参数：
 
+* `import` : 引入的模块列表，为json字符串格式，如 `{"login":"0.0.1"}` , `key`为模块名，`value`为模块版本。
+* `remove` : 删除的模块列表， 为json字符串格式，如 `["login"]` ,表示删除Login模块。
 
 ### `axe_init_module`
 
