@@ -63,3 +63,9 @@ Axe auto tools using fastlane
 > 暂未完成
 
 参数：
+
+
+# TODO
+
+* 优化APP的依赖分析， 可以考虑绘制成结构图，而不是依赖图
+* 优化绘制图形，添加颜色。

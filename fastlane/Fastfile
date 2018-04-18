@@ -324,7 +324,7 @@ def axe_dependency_analyse
   dotFile = File.open("../axe/dependency.dot","w+")
   dotFile.puts(dependencies_graph)
   dotFile.close
-  sh('dot -Tpng ../axe/dependency.dot > ../axe/dependency.png')
+  sh('dot -Tsvg ../axe/dependency.dot > ../axe/dependency.svg')
 end
 
 desc "`axe_module_build` : 构建模块， 打包成framework。 需要先安装Cocoapods依赖。"
