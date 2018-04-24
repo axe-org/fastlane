@@ -262,6 +262,8 @@ def axe_push_module(production=false)
   sh("cp -f ../#{newPodspecFile} ../#{$axeConfig.name}.podspec")
   pod_push(path: "#{$axeConfig.name}.podspec", repo: $axeConfig.podRepo, allow_warnings: true)
   sh("pod repo update #{$axeConfig.podRepo} && rm ../#{$axeConfig.name}.podspec")
+  # 最后，将API文件， 版本信息， 移动到build文件夹下，供 管理系统记录.
+  sh("cp -f ../#{axeConfig.name}/API/API.h ../build/API.h && echo #{newVersion} > ../build/version.txt")
 end
 
 # 分析依赖。
@@ -325,6 +327,8 @@ def axe_dependency_analyse
   dotFile.puts(dependencies_graph)
   dotFile.close
   sh('dot -Tsvg ../axe/dependency.dot > ../axe/dependency.svg')
+  # 最后， 移动该文件到 build目录， 供管理平台记录
+  sh('cp -f ../axe/dependency.svg ../build/dependency.svg')
 end
 
 desc "`axe_module_build` : 构建模块， 打包成framework。 需要先安装Cocoapods依赖。"
