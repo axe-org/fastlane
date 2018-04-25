@@ -100,10 +100,6 @@ lane :axe_pod_install do |options|
     end
   end
   sh("pod repo update #{$axeConfig.podRepo}")
-  cocoapods(error_callback: ->(result) {
-    sh("rm ../Podfile")
-  })
-  sh("rm ../Podfile")
 end
 
 # 自动测试， TODO
@@ -261,7 +257,7 @@ def axe_push_module(production=false)
   # 将podspec文件移动到仓库中
   sh("cp -f ../#{newPodspecFile} ../#{$axeConfig.name}.podspec")
   pod_push(path: "#{$axeConfig.name}.podspec", repo: $axeConfig.podRepo, allow_warnings: true)
-  sh("pod repo update #{$axeConfig.podRepo} && rm ../#{$axeConfig.name}.podspec")
+  sh("pod repo update #{$axeConfig.podRepo}")
   # 最后，将API文件， 版本信息， 移动到build文件夹下，供 管理系统记录.
   sh("cp -f ../#{$axeConfig.name}/API/API.h ../build/API.h && echo #{newVersion} > ../build/version.txt")
 end
