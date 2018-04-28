@@ -352,7 +352,7 @@ lane :axe_module_build do |options|
 end
 
 desc "`axe_import_module` : 负责APP中接入 组件模块。"
-desc "使用 Podfile.rb文件！！！会检测是否有实际变更。 "
+desc "使用 Podfile.rb文件！！ "
 desc "参数："
 desc "import : 新引入模块，json字符串，如 {\"a\":\"1.1.1\"} ， key为模块名，value为版本号"
 desc "remove : 删除的模块，json字符串，如 [\"a\",\"b\"] "
@@ -384,10 +384,11 @@ lane :axe_import_module do |options|
       UI.message "无法删除模块#{moduleName}， 当前并没有引入该模块！"
     end
   end
-  if changeCount == 0
-    UI.error "并没有新模块引入或者版本升级， 请检查输入！！！ "
-    exit(1)
-  end
+  # 由于jenkins构建后， 进行数据库操作，为了避免数据库操作出错，而jenkins已提交， 所以我们不做这个检测，而是如果没有变更，则不进行git提交操作。
+  # if changeCount == 0
+  #   UI.error "并没有新模块引入或者版本升级， 请检查输入！！！ "
+  #   exit(1)
+  # end
   $axeConfig.dependency = newDependency
   # 安装依赖
   axe_pod_install
@@ -398,9 +399,11 @@ lane :axe_import_module do |options|
   dependencyFile.puts(JSON.generate(newDependency))
   dependencyFile.close
   # 最后，提交git
-  git_add(path: "axe")
-  git_commit(path: "axe", message: message)
-  push_to_git_remote
+  if changeCount > 0
+    git_add(path: "axe")
+    git_commit(path: "axe", message: message)
+    push_to_git_remote
+  end
 end
 
 desc "`axe_init_module` : 脚手架模式，以快速搭建一个标准的module"
@@ -408,8 +411,5 @@ desc "TODO 暂时不会实现。"
 desc "参数："
 desc ""
 lane :axe_init_module do |options|
-  # 检测更新
-  # 整合后，分析APP的依赖情况。
-  # axe_dependency_analyse
   puts "TODO"
 end
