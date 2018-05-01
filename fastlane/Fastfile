@@ -250,13 +250,15 @@ def axe_push_module(production=false)
     UI.error("当前版本 #{newVersion} 已有tag ，无法提交版本，请检测!!!")
     exit(1)
   end
-  commitMessage = "axe 自动打包模块 #{$axeConfig.name} , 版本号 : #{newVersion}"
-  git_add(path: "axe")
-  git_commit(path: "axe", message: commitMessage)
-  add_git_tag(tag: newVersion,message: commitMessage)
-  push_to_git_remote
   # 将podspec文件移动到仓库中
   sh("cp -f ../#{newPodspecFile} ../#{$axeConfig.name}.podspec")
+  commitMessage = "axe 自动打包模块 #{$axeConfig.name} , 版本号 : #{newVersion}"
+  git_add(path: "axe")
+  # 还是要保存 Podfile和 podspec文件
+  git_add(path: ["Podfile", "#{$axeConfig.name}.podspec"])
+  git_commit(path: ["axe", "Podfile", "#{$axeConfig.name}.podspec"], message: commitMessage)
+  add_git_tag(tag: newVersion,message: commitMessage)
+  push_to_git_remote
   pod_push(path: "#{$axeConfig.name}.podspec", repo: $axeConfig.podRepo, allow_warnings: true)
   sh("pod repo update #{$axeConfig.podRepo}")
   # 最后，将API文件， 版本信息， 移动到build文件夹下，供 管理系统记录.
