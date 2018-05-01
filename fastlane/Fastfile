@@ -228,9 +228,9 @@ def axe_push_module(production=false,publish=false)
         majorVersion = versionSplitted[0].to_i
         minorVersion = versionSplitted[1].to_i
         if production
-          dependency += "\n  s.dependency '#{key}' , '>= #{value}-beta.0', '< #{majorVersion + 1}.0.0'"
-        else
           dependency += "\n  s.dependency '#{key}' , '~> #{majorVersion}.#{minorVersion}'"
+        else
+          dependency += "\n  s.dependency '#{key}' , '>= #{value}-beta.0', '< #{majorVersion + 1}.0.0'"
         end
       end
       podspec = podspec.sub('AXE_DEPENDENCY', dependency)
