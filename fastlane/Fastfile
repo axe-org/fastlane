@@ -182,7 +182,7 @@ def axe_version_get_podspec(podspecPath)
 end
 
 # 上传 pod到私有仓库
-def axe_push_module(production=false)
+def axe_push_module(production=false,publish=false)
   newVersion = ''
   newPodspecFile = ''
   Dir.chdir("..") do
@@ -240,32 +240,34 @@ def axe_push_module(production=false)
       headerSubspecs = axe_handler_ground_headers
       podspec = podspec.sub('AXE_GROUND_HEADERS', headerSubspecs)
     end
-    newPodspecFile = "axe/#{$axeConfig.name}.podspec." + (production ? "prd.rb" : "dev.rb")
-    file = File.open(newPodspecFile,"w+")
+    file = File.open("#{$axeConfig.name}.podspec","w+")
     file.puts(podspec)
     file.close
   end
-  # 然后提交版本，以及打tag.
-  if git_tag_exists(tag: newVersion)
-    UI.error("当前版本 #{newVersion} 已有tag ，无法提交版本，请检测!!!")
-    exit(1)
+  if publish
+    # 然后提交版本，以及打tag.
+    if git_tag_exists(tag: newVersion)
+      UI.error("当前版本 #{newVersion} 已有tag ，无法提交版本，请检测!!!")
+      exit(1)
+    end
+    # 将podspec文件移动到仓库中
+    newPodspecFile = "axe/#{$axeConfig.name}.podspec." + (production ? "prd.rb" : "dev.rb")
+    sh("cp -f ../#{$axeConfig.name}.podspec ../#{newPodspecFile}")
+    commitMessage = "axe 自动打包模块 #{$axeConfig.name} , 版本号 : #{newVersion}"
+    git_add(path: "axe")
+    # 还是要保存 Podfile和 podspec文件
+    git_add(path: ["Podfile", "#{$axeConfig.name}.podspec"])
+    git_commit(path: ["axe", "Podfile", "#{$axeConfig.name}.podspec"], message: commitMessage)
+    add_git_tag(tag: newVersion,message: commitMessage)
+    push_to_git_remote
+    pod_push(path: "#{$axeConfig.name}.podspec", repo: $axeConfig.podRepo, allow_warnings: true)
+    sh("pod repo update #{$axeConfig.podRepo}")
+    # 最后，将API文件， 版本信息， 移动到build文件夹下，供 管理系统记录.
+    if $axeConfig.type.eql?('module')
+      sh("cp -f ../#{$axeConfig.name}/API/API.h  ../build/API.h ")
+    end
+    sh("echo #{newVersion} > ../build/version.txt")
   end
-  # 将podspec文件移动到仓库中
-  sh("cp -f ../#{newPodspecFile} ../#{$axeConfig.name}.podspec")
-  commitMessage = "axe 自动打包模块 #{$axeConfig.name} , 版本号 : #{newVersion}"
-  git_add(path: "axe")
-  # 还是要保存 Podfile和 podspec文件
-  git_add(path: ["Podfile", "#{$axeConfig.name}.podspec"])
-  git_commit(path: ["axe", "Podfile", "#{$axeConfig.name}.podspec"], message: commitMessage)
-  add_git_tag(tag: newVersion,message: commitMessage)
-  push_to_git_remote
-  pod_push(path: "#{$axeConfig.name}.podspec", repo: $axeConfig.podRepo, allow_warnings: true)
-  sh("pod repo update #{$axeConfig.podRepo}")
-  # 最后，将API文件， 版本信息， 移动到build文件夹下，供 管理系统记录.
-  if $axeConfig.type.eql?('module')
-    sh("cp -f ../#{$axeConfig.name}/API/API.h  ../build/API.h ")
-  end
-  sh("echo #{newVersion} > ../build/version.txt")
 end
 
 # 分析依赖。
@@ -351,7 +353,7 @@ lane :axe_module_build do |options|
   # 分析依赖
   axe_dependency_analyse
   # 上传版本
-  axe_push_module(production) if publish
+  axe_push_module(production,publish)
 end
 
 desc "`axe_import_module` : 负责APP中接入 组件模块。"

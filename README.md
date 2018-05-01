@@ -43,7 +43,7 @@ Axe auto tools using fastlane
 
 手动安装时，可以快速执行命令，以设定参数： 
 
-	fastlane axe_pod production:true publish:true
+	fastlane axe_module_build production:true publish:true
 
 ### `axe_import_module`
 
