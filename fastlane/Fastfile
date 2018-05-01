@@ -260,7 +260,10 @@ def axe_push_module(production=false)
   pod_push(path: "#{$axeConfig.name}.podspec", repo: $axeConfig.podRepo, allow_warnings: true)
   sh("pod repo update #{$axeConfig.podRepo}")
   # 最后，将API文件， 版本信息， 移动到build文件夹下，供 管理系统记录.
-  sh("cp -f ../#{$axeConfig.name}/API/API.h ../build/API.h && echo #{newVersion} > ../build/version.txt")
+  if $axeConfig.type.eql?('module')
+    sh("cp -f ../#{$axeConfig.name}/API/API.h  ../build/API.h ")
+  end
+  sh("echo #{newVersion} > ../build/version.txt")
 end
 
 # 分析依赖。
