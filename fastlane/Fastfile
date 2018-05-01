@@ -290,9 +290,12 @@ def axe_dependency_analyse
           dependencyVersions[moduleName] = "#{moduleName}#{moduleVersion}"
           split = dependency.split('(')
           dependencyName = split[0].split(' ')[0].split('/')[0]
-          unless moduleName.eql?(dependencyName)
-            dependencySetting = split.length != 1 ? '(' + split[1] : ''
-            dependencies["#{moduleName}#{moduleVersion}|#{dependencyName}"] = dependencySetting
+          # 过滤 模块自身依赖 
+          unless moduleName.eql?($axeConfig.name)
+            unless moduleName.eql?(dependencyName) 
+              dependencySetting = split.length != 1 ? '(' + split[1] : ''
+              dependencies["#{moduleName}#{moduleVersion}|#{dependencyName}"] = dependencySetting
+            end
           end
         end
       end
@@ -308,9 +311,12 @@ def axe_dependency_analyse
   podInfo['DEPENDENCIES'].each do |dependency|
     split = dependency.split('(')
     dependencyName = split[0].split(' ')[0].split('/')[0]
-    dependencySetting = split.length != 1 ? '(' + split[1]: ''
-    # dependencies[moduleName + '.' + dependencyName] = dependencySetting
-    dependencies["#{moduleName}|#{dependencyName}"] = dependencySetting
+    # 过滤模块自身依赖.
+    unless dependencyName.eql?($axeConfig.name)
+      dependencySetting = split.length != 1 ? '(' + split[1]: ''
+      # dependencies[moduleName + '.' + dependencyName] = dependencySetting
+      dependencies["#{moduleName}|#{dependencyName}"] = dependencySetting
+    end
   end
   # 使用 graphviz 绘图
   dependencies_graph = "digraph G {\n"
