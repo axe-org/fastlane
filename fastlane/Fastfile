@@ -266,7 +266,7 @@ def axe_push_module(production=false,publish=false)
     if $axeConfig.type.eql?('module')
       sh("cp -f ../#{$axeConfig.name}/API/API.h  ../build/API.h ")
     end
-    sh("echo #{newVersion} > ../build/version.txt")
+    sh("echo -n #{newVersion} > ../build/version.txt")
   end
 end
 
