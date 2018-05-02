@@ -308,14 +308,17 @@ def axe_dependency_analyse
     end
   end
   moduleName = "#{$axeConfig.name}(#{$axeConfig.version})"
-  podInfo['DEPENDENCIES'].each do |dependency|
-    split = dependency.split('(')
-    dependencyName = split[0].split(' ')[0].split('/')[0]
-    # 过滤模块自身依赖.
-    unless dependencyName.eql?($axeConfig.name)
-      dependencySetting = split.length != 1 ? '(' + split[1]: ''
-      # dependencies[moduleName + '.' + dependencyName] = dependencySetting
-      dependencies["#{moduleName}|#{dependencyName}"] = dependencySetting
+  # 对于app类型，不需要绘制APP指向依赖。
+  unless $axeConfig.type.eql?('app')
+    podInfo['DEPENDENCIES'].each do |dependency|
+      split = dependency.split('(')
+      dependencyName = split[0].split(' ')[0].split('/')[0]
+      # 过滤模块自身依赖.
+      unless dependencyName.eql?($axeConfig.name)
+        dependencySetting = split.length != 1 ? '(' + split[1]: ''
+        # dependencies[moduleName + '.' + dependencyName] = dependencySetting
+        dependencies["#{moduleName}|#{dependencyName}"] = dependencySetting
+      end
     end
   end
   # 使用 graphviz 绘图
