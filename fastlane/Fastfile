@@ -186,8 +186,8 @@ def axe_push_module(production=false,publish=false)
   newVersion = ''
   newPodspecFile = ''
   Dir.chdir("..") do
-    # 这里确保使用 lfs处理大文件。
-    sh("echo `git lfs track axe/#{$axeConfig.scheme}.framework/#{$axeConfig.scheme}`")
+    # 这里确保使用 lfs处理大文件。 创建工程时，要正确设置lfs。
+    # sh("echo `git lfs track axe/#{$axeConfig.scheme}.framework/#{$axeConfig.scheme}`")
 
     # 然后 构建podspec
     podspec = File.read "axe/#{$axeConfig.name}.podspec.rb"
