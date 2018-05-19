@@ -101,6 +101,10 @@ lane :axe_pod_install do |options|
   end
   sh("pod repo update #{$axeConfig.podRepo}")
   cocoapods
+  # 如果是 app类型，则进行依赖分析，以绘制依赖图. module类型在build时分析。
+  if $axeConfig.type.eql?('app')
+    axe_dependency_analyse
+  end
 end
 
 # 自动测试， TODO
@@ -411,8 +415,6 @@ lane :axe_import_module do |options|
   $axeConfig.dependency = newDependency
   # 安装依赖
   axe_pod_install
-  # 整合后，分析APP的依赖情况。
-  axe_dependency_analyse
   # 分析完成后，保存本地dependency文件
   dependencyFile = File.open('../axe/dependency.json',"w+")
   dependencyFile.puts(JSON.generate(newDependency))
