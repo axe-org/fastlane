@@ -445,6 +445,7 @@ desc "`axe_init_module` : 脚手架模式，以快速搭建一个标准的module
 lane :axe_init_module do |options|
   name = ""
   type = "module"
+  version_branch = "v0.2"
   template_git_url = "https://github.com/axe-org/ios-module-template.git"
   # 输入模块名， 之后添加更多参数。
   loop do
@@ -457,7 +458,7 @@ lane :axe_init_module do |options|
   end
   
 
-  sh("git clone #{template_git_url} ../template")
+  sh("git clone -b #{version_branch} #{template_git_url} ../template")
   sh("mv ../template/Module ../Module && mv ../template/Module.xcodeproj ../Module.xcodeproj && mv ../template/Localhost ../Localhost && mv ../template/axe ../axe && rm -rf ../template")
 
   require 'xcodeproj'
