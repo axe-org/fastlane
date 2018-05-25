@@ -459,7 +459,8 @@ lane :axe_init_module do |options|
   
 
   sh("git clone -b #{version_branch} #{template_git_url} ../template")
-  sh("mv ../template/Module ../Module && mv ../template/Module.xcodeproj ../Module.xcodeproj && mv ../template/Localhost ../Localhost && mv ../template/axe ../axe && rm -rf ../template")
+  sh("mv ../template/Module ../Module && mv ../template/Module.xcodeproj ../Module.xcodeproj && mv ../template/Localhost ../Localhost \
+    && mv ../template/axe ../axe && mv ../template/.gitignore ../.gitignore && rm -rf ../template")
 
   require 'xcodeproj'
   project = Xcodeproj::Project.open('../Module.xcodeproj')
