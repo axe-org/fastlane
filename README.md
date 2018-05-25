@@ -4,7 +4,14 @@ Axe auto tools using fastlane
 
 使用`fastlane` 提供几个便捷的命令以处理组件化接入时的一些问题。在用户开发的模块或者APP中， 通过以下指令进行引入，以实时更新。
 
-	import_from_git(url: 'https://github.com/axe-org/fastlane')
+	import_from_git(url: 'https://github.com/axe-org/fastlane',  branch: 'v0.2')
+	
+注意版本号，由于`Axe`系统包括内容较多，所以我们使用版本号来整理依赖情况:
+
+	v0.2的fastlane 使用于 v0.2的后台， 与其他组件。
+
+ 创建`minor`版本号标记的分支来做协作开发，而各个部分依然有自己的tag来发布修复`bug`版本。
+
 
 # 指令列表 
 
@@ -32,7 +39,7 @@ Axe auto tools using fastlane
 该部分两个有意思的地方在于：
 
 * 头文件处理 ： 对于被合并到`ground`组件中的 更底层的基础组件，我们将其他头文件正确处理，以使开发者可以正常引用底层的基础组件。
-* 依赖绘制 ： 分析依赖，放在`.axe/dependency.dot`中，并使用 [graphviz](http://www.graphviz.org)绘制成图。下图示例 ：
+* 依赖绘制 ： 分析依赖，放在`axe/dependency.dot`中，并使用 [graphviz](http://www.graphviz.org)绘制成图。下图示例 ：
 
 ![](http://resource.luoxianming.cn/jOtC94LJ7y2GlzLjZzHnS.svg)
 
@@ -56,12 +63,7 @@ Axe auto tools using fastlane
 
 ### `axe_init_module`
 
-脚手架支持， 以创建一个标准的模块仓库。
-
-> 暂未完成
-
-参数：
-
+脚手架支持， 以创建一个标准的模块仓库。目前只能创建`module`类型，`ground`类型和`app`类型还是要手动创建`axe`文件夹。
 
 # TODO
 

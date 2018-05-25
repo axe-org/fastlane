@@ -3,15 +3,17 @@ class AxeConfig
   attr_accessor :name
   attr_accessor :workspace
   attr_accessor :scheme
-  attr_accessor :testScheme
+  attr_accessor :test_scheme
   attr_accessor :version
   attr_accessor :type
   attr_accessor :dependency
-  attr_accessor :podRepo
+  attr_accessor :pod_repo
+  attr_accessor :header
   def initialize()
     @workspace = nil
     @scheme = nil
-    @testScheme = nil
+    @test_scheme = nil
+    @header = nil
     @dependency = {}
     yield(self)
     if @workspace == nil
@@ -23,19 +25,23 @@ class AxeConfig
   end
 end
 
-# 解析和检测配置文件。
-config_file = "../axe/Axefile.rb"
-unless File.exist?(config_file)
-  UI.error "请在根目录创建axe文件夹， 然后设置Axefile.rb文件 "
-  exit(1)
+
+def read_axefile
+  # 解析和检测配置文件。
+  config_file = "../axe/Axefile.rb"
+  unless File.exist?(config_file)
+    UI.error "请在根目录创建axe文件夹， 然后设置Axefile.rb文件 "
+    exit(1)
+  end
+  content = File.read config_file
+  $axeConfig = eval(content)
+  if $axeConfig.type == "app" && File.exist?('../axe/.build/dependency.json')
+    # 对于app类型，从本地读取依赖信息。
+    $axeConfig.dependency = JSON.parse(File.read('../axe/.build/dependency.json'))
+  end
+  # TODO 检测输入类型是否准确
 end
-content = File.read config_file
-$axeConfig = eval(content)
-if $axeConfig.type == "app" && File.exist?('../axe/dependency.json')
-  # 对于app类型，从本地读取依赖信息。
-  $axeConfig.dependency = JSON.parse(File.read('../axe/dependency.json'))
-end
-# TODO 检测输入类型是否准确
+
 
 
 desc "安装依赖。 对于module和app类型，拥有业务组件依赖，所以必须通过该命令安装依赖。"
@@ -47,8 +53,9 @@ desc ""
 desc "手动安装时，可以快速执行命令： "
 desc "```\nfastlane axe_pod_install production:true source:true\n```"
 lane :axe_pod_install do |options|
+  read_axefile
   unless File.exist?("../axe/Podfile.rb")
-    UI.error "请在.axe目录创建 Podfile.rb "
+    UI.error "请在axe目录创建 Podfile.rb "
     exit(1)
   end
   if $axeConfig.type.eql?('ground')
@@ -80,10 +87,10 @@ lane :axe_pod_install do |options|
   end
   devPodfile = devPodfile.sub('AXE_PODFILE', devDependency)
   prdPodfile = prdPodfile.sub('AXE_PODFILE', prdDependency)
-  devFile = File.open("../axe/Podfile.dev.rb","w+")
+  devFile = File.open("../axe/.build/Podfile.dev.rb","w+")
   devFile.puts(devPodfile)
   devFile.close
-  prdFile = File.open("../axe/Podfile.prd.rb","w+")
+  prdFile = File.open("../axe/.build/Podfile.prd.rb","w+")
   prdFile.puts(prdPodfile)
   prdFile.close
   # 切换路径
@@ -94,12 +101,12 @@ lane :axe_pod_install do |options|
     # 这里建议删掉 workspace文件. 
     sh("rm -rf #{$axeConfig.workspace}")
     if options[:production]
-      sh("cp -f axe/Podfile.prd.rb Podfile")
+      sh("cp -f axe/.build/Podfile.prd.rb Podfile")
     else
-      sh("cp -f axe/Podfile.dev.rb Podfile")
+      sh("cp -f axe/.build/Podfile.dev.rb Podfile")
     end
   end
-  sh("pod repo update #{$axeConfig.podRepo}")
+  sh("pod repo update #{$axeConfig.pod_repo}")
   cocoapods
   # 如果是 app类型，则进行依赖分析，以绘制依赖图. module类型在build时分析。
   if $axeConfig.type.eql?('app')
@@ -134,10 +141,10 @@ def axe_handler_ground_headers
       end
     end
   end
-  sh("rm -rf axe/Headers && mv Pods/Headers/Public/.axeHeaders axe/Headers")
+  sh("rm -rf axe/.build/Headers && mv Pods/Headers/Public/.axeHeaders axe/.build/Headers")
   dirHeadersSpecs = ""
   headerDirs.each do |dir|
-    dirHeadersSpecs += "\n      sss.subspec '#{dir}' do |ssss|\n        ssss.source_files = 'axe/Headers/dir/#{dir}/*.h'\n        ssss.header_dir   = '#{dir}'\n      end"
+    dirHeadersSpecs += "\n      sss.subspec '#{dir}' do |ssss|\n        ssss.source_files = 'axe/.build/Headers/dir/#{dir}/*.h'\n        ssss.header_dir   = '#{dir}'\n      end"
   end
   return dirHeadersSpecs
 end
@@ -197,8 +204,8 @@ def axe_push_module(production=false,publish=false)
     podspec = File.read "axe/#{$axeConfig.name}.podspec.rb"
     if production
       newVersion = $axeConfig.version
-      if File.exist?("axe/#{$axeConfig.name}.podspec.prd.rb")
-        lastVersion = axe_version_get_podspec("axe/#{$axeConfig.name}.podspec.prd.rb")
+      if File.exist?("axe/.build/#{$axeConfig.name}.podspec.prd.rb")
+        lastVersion = axe_version_get_podspec("axe/.build/#{$axeConfig.name}.podspec.prd.rb")
         if lastVersion.eql?(newVersion)
           UI.error "当前设置版本号 #{$axeConfig.version} 已发布，请检测修改后重试。"
           exit(1)
@@ -206,8 +213,8 @@ def axe_push_module(production=false,publish=false)
       end
     else 
       newVersion = "#{$axeConfig.version}-beta.0"
-      if File.exist?("axe/#{$axeConfig.name}.podspec.dev.rb")
-        lastVersion = axe_version_get_podspec("axe/#{$axeConfig.name}.podspec.dev.rb")
+      if File.exist?("axe/.build/#{$axeConfig.name}.podspec.dev.rb")
+        lastVersion = axe_version_get_podspec("axe/.build/#{$axeConfig.name}.podspec.dev.rb")
         # 版本号格式为 x.x.x[-beta.x] ,所以先获取前段的版本号。
         strSplit = lastVersion.split('-')
         mainVersion = strSplit[0]
@@ -255,7 +262,7 @@ def axe_push_module(production=false,publish=false)
       exit(1)
     end
     # 将podspec文件移动到仓库中
-    newPodspecFile = "axe/#{$axeConfig.name}.podspec." + (production ? "prd.rb" : "dev.rb")
+    newPodspecFile = "axe/.build/#{$axeConfig.name}.podspec." + (production ? "prd.rb" : "dev.rb")
     sh("cp -f ../#{$axeConfig.name}.podspec ../#{newPodspecFile}")
     commitMessage = "axe 自动打包模块 #{$axeConfig.name} , 版本号 : #{newVersion}"
     git_add(path: "axe")
@@ -268,7 +275,12 @@ def axe_push_module(production=false,publish=false)
     sh("pod repo update #{$axeConfig.podRepo}")
     # 最后，将API文件， 版本信息， 移动到build文件夹下，供 管理系统记录.
     if $axeConfig.type.eql?('module')
-      sh("cp -f ../#{$axeConfig.name}/API/API.h  ../build/API.h ")
+      if $axeConfig.header
+        sh("cp -f ../#{$axeConfig.header}  ../build/API.h ")
+      else
+        # 支持一下0.1.0时的结构。
+        sh("cp -f ../#{$axeConfig.name}/API/API.h  ../build/API.h ")
+      end
     end
     file = File.open("../build/version.txt", "w+")
     file.puts(newVersion)
@@ -345,10 +357,10 @@ def axe_dependency_analyse
     dependencies_graph += "  \"#{lib}\" -> \"#{depend}\" [ label = \"#{dependencySetting}\" ];\n"
   end 
   dependencies_graph += "}\n"
-  dotFile = File.open("../axe/dependency.dot","w+")
+  dotFile = File.open("../axe/.build/dependency.dot","w+")
   dotFile.puts(dependencies_graph)
   dotFile.close
-  sh('dot -Tsvg ../axe/dependency.dot > ../axe/dependency.svg')
+  sh('dot -Tsvg ../axe/.build/dependency.dot > ../axe/dependency.svg')
 end
 
 desc "`axe_module_build` : 构建模块， 打包成framework。 需要先安装Cocoapods依赖。"
@@ -358,6 +370,7 @@ desc "* `publish` : 默认为false,避免本地自动测试提交。"
 desc "* `production` : 表示发布的版本，需要设定publish。 默认为false, 表示beta版本，会自动增加版本号，注意生产版本只能发布一次。"
 desc ""
 lane :axe_module_build do |options|
+  read_axefile
   # 先检测 依赖是否安装
   unless File.exist?("../Podfile.lock")
     UI.error "请先执行 axe_pod_install 命令以安装依赖！！！ "
@@ -380,6 +393,7 @@ desc "参数："
 desc "import : 新引入模块，json字符串，如 {\"a\":\"1.1.1\"} ， key为模块名，value为版本号"
 desc "remove : 删除的模块，json字符串，如 [\"a\",\"b\"] "
 lane :axe_import_module do |options|
+  read_axefile
   changeCount = 0 # 统计变更内容数量，如果没有变更，则报错。
   importModules = options[:import] ? JSON.parse(options[:import]) : Hash.new
   removeModules = options[:remove] ? JSON.parse(options[:remove]) : []
@@ -416,7 +430,7 @@ lane :axe_import_module do |options|
   # 安装依赖
   axe_pod_install
   # 分析完成后，保存本地dependency文件
-  dependencyFile = File.open('../axe/dependency.json',"w+")
+  dependencyFile = File.open('../axe/.build/dependency.json',"w+")
   dependencyFile.puts(JSON.generate(newDependency))
   dependencyFile.close
   # 最后，提交git
@@ -428,9 +442,66 @@ lane :axe_import_module do |options|
 end
 
 desc "`axe_init_module` : 脚手架模式，以快速搭建一个标准的module"
-desc "TODO 暂时不会实现。"
-desc "参数："
-desc ""
 lane :axe_init_module do |options|
-  puts "TODO"
+  name = ""
+  type = "module"
+  template_git_url = "https://github.com/axe-org/ios-module-template.git"
+  # 输入模块名， 之后添加更多参数。
+  loop do
+    name = UI.input("Input your module name : ").strip
+    if name.length > 0
+      break
+    else
+      UI.error "Please input a correct module name !!!"
+    end
+  end
+  
+
+  sh("git clone #{template_git_url} ../template")
+  sh("mv ../template/Module ../Module && mv ../template/Module.xcodeproj ../Module.xcodeproj && mv ../template/Localhost ../Localhost && mv ../template/axe ../axe && rm -rf ../template")
+
+  require 'xcodeproj'
+  project = Xcodeproj::Project.open('../Module.xcodeproj')
+  # 添加 moduleName头文件，以解决  no umbrella header 警告
+  target = project.native_targets.find { |target| target.product_type == "com.apple.product-type.framework" }
+  sh("mv ../Module/Module.h ../Module/#{name}.h")
+  module_group = project.root_object.main_group.children.select { |group| group.path == "Module" }.first
+  target.add_file_references([module_group.new_file("../Module/#{name}.h")])
+  # 修改 target名称，所以scheme名称依然是 Module， 但是target改为具体模块名。
+  target.name = name
+  project.save
+
+  # 修改 axefile
+  axefile = File.read "../axe/Axefile.rb"
+  axefile = axefile.gsub('NAME', name)
+  axefile = axefile.gsub('TYPE', type)
+  file = File.open("../axe/Axefile.rb","w+")
+  file.puts(axefile)
+  file.close
+  # 修改podfile文件 
+  podfile = File.read "../axe/Podfile.rb"
+  podfile = podfile.gsub('NAME', name)
+  file = File.open("../axe/Podfile.rb","w+")
+  file.puts(podfile)
+  file.close
+  # 修改Podspec文件
+  podspec = File.read "../axe/MODULE.podspec.rb"
+  podspec = podspec.gsub('NAME', name)
+  file = File.open("../axe/#{name}.podspec.rb","w+")
+  file.puts(podspec)
+  file.close
+  sh("rm ../axe/MODULE.podspec.rb")
+  # 输出一份到根目录
+  podspec = podspec.gsub('AXE_VERSION', '0.0.1')
+  podspec = podspec.gsub('AXE_DEPENDENCY', '')
+  file = File.open("../#{name}.podspec","w+")
+  file.puts(podspec)
+  file.close
+  # 创建gitlfs配置文件
+  file = File.open("../.gitattributes","w+")
+  file.puts("axe/#{name}.framework/#{name} filter=lfs diff=lfs merge=lfs -text\n")
+  file.close
+
+  axe_pod_install
+
 end
