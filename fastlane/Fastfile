@@ -271,8 +271,8 @@ def axe_push_module(production=false,publish=false)
     git_commit(path: ["axe", "Podfile", "#{$axeConfig.name}.podspec"], message: commitMessage)
     add_git_tag(tag: newVersion,message: commitMessage)
     push_to_git_remote
-    pod_push(path: "#{$axeConfig.name}.podspec", repo: $axeConfig.podRepo, allow_warnings: true)
-    sh("pod repo update #{$axeConfig.podRepo}")
+    pod_push(path: "#{$axeConfig.name}.podspec", repo: $axeConfig.pod_repo, allow_warnings: true)
+    sh("pod repo update #{$axeConfig.pod_repo}")
     # 最后，将API文件， 版本信息， 移动到build文件夹下，供 管理系统记录.
     if $axeConfig.type.eql?('module')
       if $axeConfig.header
