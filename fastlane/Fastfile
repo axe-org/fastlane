@@ -315,7 +315,9 @@ lane :axe_pod_install do |options|
     cocoapods
     next
   end
-  buildPodspecFile(options[:production])
+  unless $axeConfig.type.eql?('app')
+    buildPodspecFile(options[:production])
+  end
   #dev环境
   devPodfile = File.read "../axe/Podfile.rb"
   prdPodfile = File.read "../axe/Podfile.rb"
