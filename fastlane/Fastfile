@@ -26,7 +26,29 @@ class AxeConfig
 end
 
 
+def which_check(command, error_msg)
+  # puts "检测 #{command} 是否已安装..."
+  sh_command = "which #{command}"
+  sh sh_command, log: false, error_callback: ->(result) { puts error_msg }
+end
+
+def check_command_install
+  # 提前检测，以确保一些依赖的软件得到安装。
+  # 检测git-lfs是否安装。
+  which_check('git-lfs','未安装 git-lfs , 请使用命令: brew install git-lfs 进行安装。 git-lfs用于在git上存储大文件。')
+  # 检测 graphviz 是否安装
+  which_check('dot', '未安装graphviz， 请使用命令 : brew install graphviz 进行安装。 graphviz 用于绘图。')
+  # 检测 cocoapods 是否安装
+  which_check('pod', 'cocoapods 请使用命令 : gem install cocoapods 进行安装。 cocoapods 用于依赖管理')
+end
+
 def read_axefile
+  # 初始化时， 进行检测
+  check_command_install
+  # 检测文件夹：
+  sh('if [ ! -d "../axe" ];then mkdir ../axe fi')
+  sh('if [ ! -d "../axe/.build" ];then mkdir ../axe/.build fi')
+  sh('if [ ! -d "~/.cocoapods/repos" ];then pod repo add axe-demo "https://github.com/axe-org/demo-private-spec.git" fi')
   # 解析和检测配置文件。
   config_file = "../axe/Axefile.rb"
   unless File.exist?(config_file)
@@ -41,7 +63,6 @@ def read_axefile
   end
   # TODO 检测输入类型是否准确
 end
-
 
 def buildPodspecFile(production=false)
   # 构建新的 podspec文件。 返回值为新的版本号。
@@ -315,7 +336,8 @@ lane :axe_pod_install do |options|
     cocoapods
     next
   end
-  unless $axeConfig.type.eql?('app')
+  if $axeConfig.type.eql?('module')
+    # 当是module类型时，要先构建一下本地的podspec文件。
     buildPodspecFile(options[:production])
   end
   #dev环境
