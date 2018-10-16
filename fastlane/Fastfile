@@ -46,9 +46,9 @@ def read_axefile
   # 初始化时， 进行检测
   check_command_install
   # 检测文件夹：
-  sh('if [ ! -d "../axe" ];then mkdir ../axe fi')
-  sh('if [ ! -d "../axe/.build" ];then mkdir ../axe/.build fi')
-  sh('if [ ! -d "~/.cocoapods/repos" ];then pod repo add axe-demo "https://github.com/axe-org/demo-private-spec.git" fi')
+  sh('if [ ! -d "../axe" ];then mkdir ../axe; fi')
+  sh('if [ ! -d "../axe/.build" ];then mkdir ../axe/.build; fi')
+  sh('if [ ! -d "~/.cocoapods/repos" ];then pod repo add axe-demo "https://github.com/axe-org/demo-private-spec.git"; fi')
   # 解析和检测配置文件。
   config_file = "../axe/Axefile.rb"
   unless File.exist?(config_file)
